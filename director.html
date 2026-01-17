@@ -41,6 +41,13 @@
           <button class="btn btn-secondary" onclick="openLogModal()">
             📋 알림 발송 이력
           </button>
+          <button class="btn btn-secondary" onclick="downloadExcelTemplate()">
+            📄 엑셀 양식 다운로드
+          </button>
+          <button class="btn btn-info" onclick="triggerExcelUpload()">
+            📤 엑셀 일괄 등록
+          </button>
+          <input type="file" id="excelInput" accept=".csv" style="display: none;" onchange="handleExcelUpload(event)">
           <button class="btn btn-primary" onclick="openAddModal()">
             ➕ 보호사 추가
           </button>
@@ -204,14 +211,27 @@
 
     // 현재 편집 중인 보호사 ID
     let editingCaregiverId = null;
+    let caregivers = []; // 로컬 데이터 관리
 
     // 페이지 로드 시 초기화
     document.addEventListener('DOMContentLoaded', () => {
+      initCaregivers();
       initPage();
       loadCaregivers();
       updateSummaryCards();
       loadReportData(); // 보고서 데이터 로드
     });
+
+    // 데이터 초기화 (Mock -> LocalStorage)
+    function initCaregivers() {
+      const stored = localStorage.getItem('kema_caregivers');
+      if (stored) {
+        caregivers = JSON.parse(stored);
+      } else {
+        caregivers = [...mockCaregivers];
+        localStorage.setItem('kema_caregivers', JSON.stringify(caregivers));
+      }
+    }
 
     // 페이지 초기 텍스트 설정
     function initPage() {
@@ -224,7 +244,7 @@
     // 보고서 데이터 로드
     function loadReportData() {
       const tbody = document.getElementById('reportTableBody');
-      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const orgCaregivers = caregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
       const allRecords = getAllCompletionRecords();
 
       // 데이터 매핑
@@ -259,7 +279,7 @@
 
     // 엑셀(CSV) 다운로드
     function exportToCSV() {
-      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const orgCaregivers = caregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
       const allRecords = getAllCompletionRecords();
 
       let csvContent = "\uFEFF"; // BOM (한글 깨짐 방지)
@@ -299,7 +319,7 @@
 
     // 요약 카드 업데이트
     function updateSummaryCards() {
-      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const orgCaregivers = caregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
       const totalCount = orgCaregivers.length;
 
       // 이수 완료 인원 계산 (최소 1개 이상의 교육을 완료한 보호사)
@@ -321,7 +341,7 @@
     // 보호사 목록 로드
     function loadCaregivers() {
       const tbody = document.getElementById('caregiversTableBody');
-      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const orgCaregivers = caregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
 
       const allRecords = getAllCompletionRecords();
       // 감염 관리 교육(ID:1) 이수 여부를 확인한다고 가정
@@ -384,7 +404,7 @@
     // 보호사 수정 모달 열기
     function editCaregiver(id) {
       editingCaregiverId = id;
-      const caregiver = mockCaregivers.find(c => c.id === id);
+      const caregiver = caregivers.find(c => c.id === id);
 
       if (!caregiver) return;
 
@@ -424,39 +444,43 @@
 
       if (editingCaregiverId) {
         // 수정
-        const index = mockCaregivers.findIndex(c => c.id === editingCaregiverId);
+        const index = caregivers.findIndex(c => c.id === editingCaregiverId);
         if (index !== -1) {
-          mockCaregivers[index] = {
-            ...mockCaregivers[index],
+          caregivers[index] = {
+            ...caregivers[index],
             ...formData
           };
         }
       } else {
         // 추가
-        const newId = Math.max(...mockCaregivers.map(c => c.id)) + 1;
-        mockCaregivers.push({
+        const newId = caregivers.length > 0 ? Math.max(...caregivers.map(c => c.id)) + 1 : 1;
+        caregivers.push({
           id: newId,
           organization_id: CURRENT_ORGANIZATION_ID,
           ...formData
         });
       }
 
+      localStorage.setItem('kema_caregivers', JSON.stringify(caregivers));
       closeModal();
       loadCaregivers();
       updateSummaryCards();
+      loadReportData();
     }
 
     // 보호사 삭제
     function deleteCaregiver(id) {
-      const caregiver = mockCaregivers.find(c => c.id === id);
+      const caregiver = caregivers.find(c => c.id === id);
       if (!caregiver) return;
 
       if (confirm(`${caregiver.name} 보호사를 삭제하시겠습니까?`)) {
-        const index = mockCaregivers.findIndex(c => c.id === id);
+        const index = caregivers.findIndex(c => c.id === id);
         if (index !== -1) {
-          mockCaregivers.splice(index, 1);
+          caregivers.splice(index, 1);
+          localStorage.setItem('kema_caregivers', JSON.stringify(caregivers));
           loadCaregivers();
           updateSummaryCards();
+          loadReportData();
         }
       }
     }
@@ -499,7 +523,7 @@
 
       tbody.innerHTML = orgLogs.map(log => {
         // 보호사 정보 찾기
-        const caregiver = mockCaregivers.find(c => c.id === log.caregiver_id);
+        const caregiver = caregivers.find(c => c.id === log.caregiver_id);
         const caregiverName = caregiver ? caregiver.name : '알 수 없음';
 
         // 교육 정보 찾기
@@ -534,6 +558,94 @@
     document.getElementById('logModal').addEventListener('click', (e) => {
       if (e.target.id === 'logModal') closeLogModal();
     });
+
+    /* =========================================
+       엑셀 일괄 등록 기능
+       ========================================= */
+
+    // 엑셀 양식 다운로드
+    function downloadExcelTemplate() {
+      const headers = "성명,연락처,생년월일(YYYY-MM-DD),자격증번호,입사일(YYYY-MM-DD)\n";
+      const sampleData = "홍길동,010-1234-5678,1980-01-01,CG-2024-00001,2024-01-01\n";
+      const csvContent = "\uFEFF" + headers + sampleData;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "요양보호사_일괄등록_양식.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 파일 선택 트리거
+    function triggerExcelUpload() {
+      document.getElementById('excelInput').click();
+    }
+
+    // 엑셀 파일 업로드 처리
+    function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target.result;
+        processExcelData(content);
+      };
+      reader.readAsText(file, 'utf-8');
+
+      // 입력값 초기화 (같은 파일 다시 올릴 수 있도록)
+      event.target.value = '';
+    }
+
+    // CSV 데이터 파싱 및 저장
+    function processExcelData(csvText) {
+      // 줄 단위로 분리 (빈 줄 제외)
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== "");
+      if (lines.length <= 1) {
+        alert("등록할 데이터가 없습니다.");
+        return;
+      }
+
+      // 헤더 제외하고 데이터 추출
+      const newCaregivers = [];
+      let nextId = caregivers.length > 0 ? Math.max(...caregivers.map(c => c.id)) + 1 : 1;
+
+      for (let i = 1; i < lines.length; i++) {
+        const columns = lines[i].split(',').map(col => col.trim());
+        if (columns.length < 2) continue; // 최소 이름, 연락처는 있어야 함
+
+        const [name, phone, birthDate, certNo, hireDate] = columns;
+
+        if (!name || !phone) continue;
+
+        newCaregivers.push({
+          id: nextId++,
+          organization_id: CURRENT_ORGANIZATION_ID,
+          name: name,
+          phone: phone,
+          birth_date: birthDate || null,
+          certificate_number: certNo || null,
+          hire_date: hireDate || null,
+          status: 'active'
+        });
+      }
+
+      if (newCaregivers.length > 0) {
+        caregivers = [...caregivers, ...newCaregivers];
+        localStorage.setItem('kema_caregivers', JSON.stringify(caregivers));
+
+        loadCaregivers();
+        updateSummaryCards();
+        loadReportData();
+
+        alert(`${newCaregivers.length}명의 보호사가 일괄 등록되었습니다.`);
+      } else {
+        alert("등록 가능한 유효한 데이터가 없습니다. 양식을 확인해주세요.");
+      }
+    }
   </script>
 </body>
 

@@ -76,20 +76,34 @@
                 <input type="password" id="password" class="form-input" placeholder="비밀번호를 입력하세요" required>
             </div>
 
+            <div class="form-check"
+                style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; margin-top: -10px;">
+                <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="rememberMe"
+                    style="font-size: 0.875rem; color: var(--neutral-600); cursor: pointer; user-select: none;">아이디
+                    저장</label>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-full">로그인</button>
         </form>
-
-        <div class="login-footer">
-            <p>초기 계정: <strong>admin</strong> / <strong>director</strong> (비번: 1234)</p>
-        </div>
     </div>
 
     <script src="mockData.js"></script>
     <script>
+        // 페이지 로드 시 저장된 아이디 불러오기
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedId = localStorage.getItem('kema_saved_id');
+            if (savedId) {
+                document.getElementById('username').value = savedId;
+                document.getElementById('rememberMe').checked = true;
+            }
+        });
+
         function handleLogin(e) {
             e.preventDefault();
             const id = document.getElementById('username').value;
             const pw = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
 
             if (typeof mockUsers === 'undefined') {
                 alert('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
@@ -99,6 +113,13 @@
             const user = mockUsers.find(u => u.username === id && u.password === pw);
 
             if (user) {
+                // 아이디 저장 처리
+                if (rememberMe) {
+                    localStorage.setItem('kema_saved_id', id);
+                } else {
+                    localStorage.removeItem('kema_saved_id');
+                }
+
                 // 직무에 따라 리다이렉션
                 if (user.role === 'admin') {
                     location.href = 'headquarters.html';

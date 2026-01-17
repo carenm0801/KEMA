@@ -44,24 +44,32 @@
             </div>
         </div>
 
-        <!-- 백엔드 스케줄러 시뮬레이션 -->
-        <div class="card mb-md" style="border-left: 5px solid var(--warning-500);">
-            <div class="card-header">
-                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-                    <h2 class="card-title">🤖 자동화 시스템 모니터링 (백엔드 시뮬레이션)</h2>
-                    <span id="schedulerStatus" class="badge badge-warning">중지됨</span>
+        <!-- 탭 네비게이션 -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('org-tab')">요양기관 관리</button>
+            <button class="tab-btn" onclick="switchTab('edu-tab')">교육콘텐츠 관리</button>
+        </nav>
+
+        <!-- 탭 1: 요양기관 관리 -->
+        <div id="org-tab" class="tab-content active">
+            <!-- 백엔드 스케줄러 시뮬레이션 -->
+            <div class="card mb-md" style="border-left: 5px solid var(--warning-500);">
+                <div class="card-header">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <h2 class="card-title">🤖 자동화 시스템 모니터링 (백엔드 시뮬레이션)</h2>
+                        <span id="schedulerStatus" class="badge badge-warning">중지됨</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="btnStartScheduler" onclick="toggleScheduler()">
+                            ▶ 시스템 가동
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearSystemLogs()">
+                            지우기
+                        </button>
+                    </div>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="btnStartScheduler" onclick="toggleScheduler()">
-                        ▶ 시스템 가동
-                    </button>
-                    <button class="btn btn-secondary" onclick="clearSystemLogs()">
-                        지우기
-                    </button>
-                </div>
-            </div>
-            <div class="card-body" style="padding: var(--spacing-md);">
-                <div id="systemLogs" style="
+                <div class="card-body" style="padding: var(--spacing-md);">
+                    <div id="systemLogs" style="
                     background: #1e1e1e; 
                     color: #d4d4d4; 
                     font-family: 'Consolas', monospace; 
@@ -72,45 +80,100 @@
                     font-size: 0.85rem;
                     line-height: 1.5;
                 ">
-                    <div>[System] 준비 완료. '시스템 가동' 버튼을 눌러 백엔드 스케줄러를 시작하세요.</div>
-                    <div>[System] 설정: 매 10초마다 현재 시간과 일치하는 알림 설정을 확인합니다.</div>
+                        <div>[System] 준비 완료. '시스템 가동' 버튼을 눌러 백엔드 스케줄러를 시작하세요.</div>
+                        <div>[System] 설정: 매 10초마다 현재 시간과 일치하는 알림 설정을 확인합니다.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기관 관리 테이블 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">기관 통합 관리</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openOrgModal()">
+                            ➕ 기관 추가
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>기관명</th>
+                                    <th>센터장명</th>
+                                    <th>연락처</th>
+                                    <th>소속 보호사 수</th>
+                                    <th>교육명</th>
+                                    <th>발송 요일</th>
+                                    <th>발송 시간</th>
+                                    <th>상태</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="organizationsTableBody">
+                                <!-- 동적으로 생성됨 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 기관 관리 테이블 -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">기관 통합 관리</h2>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="openOrgModal()">
-                        ➕ 기관 추가
-                    </button>
+        <!-- 탭 2: 교육콘텐츠 관리 -->
+        <div id="edu-tab" class="tab-content">
+            <!-- 교육 요약 카드 -->
+            <div class="summary-cards" style="margin-bottom: var(--spacing-lg);">
+                <div class="summary-card">
+                    <div class="summary-card-icon">📚</div>
+                    <div class="summary-card-content">
+                        <div class="summary-card-value" id="totalEducationContents">0</div>
+                        <div class="summary-card-label">교육자료 총수</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-icon">✅</div>
+                    <div class="summary-card-content">
+                        <div class="summary-card-value" id="mandatoryEducationCount">0</div>
+                        <div class="summary-card-label">필수 교육</div>
+                    </div>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>기관명</th>
-                                <th>센터장명</th>
-                                <th>연락처</th>
-                                <th>소속 보호사 수</th>
-                                <th>교육명</th>
-                                <th>발송 요일</th>
-                                <th>발송 시간</th>
-                                <th>상태</th>
-                                <th>작업</th>
-                            </tr>
-                        </thead>
-                        <tbody id="organizationsTableBody">
-                            <!-- 동적으로 생성됨 -->
-                        </tbody>
-                    </table>
+
+            <!-- 교육콘텐츠 관리 테이블 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">교육콘텐츠 관리</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openEduModal()">
+                            ➕ 교육자료 추가
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>교육명</th>
+                                    <th>카테고리</th>
+                                    <th>콘텐츠 타입</th>
+                                    <th>필수여부</th>
+                                    <th>상태</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="educationTableBody">
+                                <!-- 동적으로 생성됨 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- 탭 전환 델리게이트를 위한 컨테이너 닫기 -->
     </div>
 
     <!-- 기관 추가/수정 모달 -->
@@ -344,29 +407,111 @@
         </div>
     </div>
 
+    <!-- 교육 콘텐츠 추가/수정 모달 -->
+    <div id="eduModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="eduModalTitle">교육자료 추가</h3>
+                <button class="modal-close" onclick="closeEduModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="eduForm">
+                    <div class="form-group mb-md">
+                        <label class="form-label required">교육명</label>
+                        <input type="text" id="eduTitleInput" class="form-input" required>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label">교육 설명</label>
+                        <textarea id="eduDescriptionInput" class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label required">카테고리</label>
+                        <input type="text" id="eduCategoryInput" class="form-input" placeholder="예: 감염관리, 안전교육"
+                            required>
+                    </div>
+                    <div class="form-group mb-md" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label class="form-label required">콘텐츠 타입</label>
+                            <select id="eduTypeInput" class="form-select">
+                                <option value="video">동영상 (Video)</option>
+                                <option value="document">문서 (Document)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">교육 시간 (분)</label>
+                            <input type="number" id="eduDurationInput" class="form-input" value="60">
+                        </div>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label required">콘텐츠 URL</label>
+                        <input type="url" id="eduUrlInput" class="form-input" placeholder="https://" required>
+                    </div>
+                    <div style="display: flex; gap: 20px; margin-top: 20px;" class="bg-neutral-50 p-md rounded">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="eduMandatoryInput" style="width: 18px; height: 18px;">
+                            <span style="font-weight: 500;">필수 교육 설정</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="eduActiveInput" checked style="width: 18px; height: 18px;">
+                            <span style="font-weight: 500;">활성화</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEduModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveEducationContent()">저장</button>
+            </div>
+        </div>
+    </div>
+
     <script src="mockData.js"></script>
     <script>
-        // 현재 편집 중인 기관 ID
+        // 현재 편집 중인 ID들
         let editingOrganizationId = null;
-        let editingOrgDataId = null; // 기관 정보 수정용 ID
+        let editingOrgDataId = null;
+        let editingEduId = null;
+
         let organizations = []; // 로컬 데이터
+        let educationContents = []; // 교육 콘텐츠 로컬 데이터
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', () => {
-            initOrganizations();
+            initData();
             loadOrganizations();
+            loadEducationTable();
             updateSummaryCards();
+            updateEduSummary();
         });
 
-        // 데이터 초기화 (Mock -> LocalStorage)
-        function initOrganizations() {
-            const stored = localStorage.getItem('kema_organizations');
-            if (stored) {
-                organizations = JSON.parse(stored);
+        // 데이터 초기화
+        function initData() {
+            // 기관 데이터
+            const storedOrgs = localStorage.getItem('kema_organizations');
+            if (storedOrgs) {
+                organizations = JSON.parse(storedOrgs);
             } else {
                 organizations = [...mockOrganizations];
                 localStorage.setItem('kema_organizations', JSON.stringify(organizations));
             }
+
+            // 교육 콘텐츠 데이터
+            const storedEdu = localStorage.getItem('kema_education_contents');
+            if (storedEdu) {
+                educationContents = JSON.parse(storedEdu);
+            } else {
+                educationContents = [...mockEducationContents];
+                localStorage.setItem('kema_education_contents', JSON.stringify(educationContents));
+            }
+        }
+
+        // 탭 전환 함수
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
         }
 
         // 요약 카드 업데이트
@@ -378,6 +523,12 @@
             document.getElementById('totalOrganizations').textContent = totalOrgs;
             document.getElementById('totalAllCaregivers').textContent = totalCaregivers;
             document.getElementById('activeNotifications').textContent = activeNotifications;
+        }
+
+        // 교육 요약 업데이트
+        function updateEduSummary() {
+            document.getElementById('totalEducationContents').textContent = educationContents.length;
+            document.getElementById('mandatoryEducationCount').textContent = educationContents.filter(e => e.is_mandatory).length;
         }
 
         // 기관별 보호사 수 계산
@@ -398,10 +549,10 @@
                 const caregiversCount = getCaregiversCount(org.id);
                 const settings = getNotificationSettings(org.id);
 
-                // 교육 콘텐츠 이름 가져오기
+                // 교육 콘텐츠 이름 가져오기 (로컬 데이터 기준)
                 let educationName = '-';
                 if (settings && settings.education_content_id) {
-                    const education = mockEducationContents.find(e => e.id === settings.education_content_id);
+                    const education = educationContents.find(e => e.id === settings.education_content_id);
                     if (education) {
                         educationName = education.title;
                     }
@@ -580,7 +731,7 @@
             document.getElementById('notificationModal').classList.remove('hidden');
         }
 
-        // 교육 콘텐츠 목록 로드
+        // 교육 콘텐츠 목록 로드 (발송 설정 모달용)
         function loadEducationContents() {
             const select = document.getElementById('educationContent');
 
@@ -589,8 +740,8 @@
                 select.remove(1);
             }
 
-            // 활성화된 교육 콘텐츠만 로드
-            const activeContents = mockEducationContents.filter(c => c.status === 'active');
+            // 활성화된 교육 콘텐츠만 로드 (로컬 데이터 기준)
+            const activeContents = educationContents.filter(c => c.status === 'active');
 
             activeContents.forEach(content => {
                 const option = document.createElement('option');
@@ -635,7 +786,7 @@
 
             const template = document.getElementById('messageTemplate').value;
             const sampleCaregiver = mockCaregivers.find(c => c.organization_id === editingOrganizationId);
-            const sampleEducation = mockEducationContents[0];
+            const sampleEducation = educationContents[0];
 
             // 변수 치환
             let preview = template
@@ -797,6 +948,114 @@
                 closeNotificationModal();
             }
         });
+
+        /* =========================================
+           교육 콘텐츠 관리 로직
+           ========================================= */
+
+        // 교육 콘텐츠 테이블 로드
+        function loadEducationTable() {
+            const tbody = document.getElementById('educationTableBody');
+            tbody.innerHTML = educationContents.map(edu => `
+                <tr>
+                    <td><strong>${edu.title}</strong></td>
+                    <td><span class="badge badge-info">${edu.category}</span></td>
+                    <td>${edu.content_type === 'video' ? '📹 동영상' : '📄 문서'}</td>
+                    <td>${edu.is_mandatory ? '<span class="badge badge-danger">필수</span>' : '<span class="badge badge-secondary">일반</span>'}</td>
+                    <td>${getStatusBadge(edu.status)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-secondary" onclick="openEduModal(${edu.id})">✏️ 수정</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEducation(${edu.id})">🗑️ 삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 교육 모달 열기
+        function openEduModal(eduId = null) {
+            editingEduId = eduId;
+            const title = document.getElementById('eduModalTitle');
+            const form = document.getElementById('eduForm');
+
+            if (eduId) {
+                const edu = educationContents.find(e => e.id === eduId);
+                if (!edu) return;
+                title.textContent = '교육자료 수정';
+                document.getElementById('eduTitleInput').value = edu.title;
+                document.getElementById('eduDescriptionInput').value = edu.description || '';
+                document.getElementById('eduCategoryInput').value = edu.category;
+                document.getElementById('eduTypeInput').value = edu.content_type;
+                document.getElementById('eduDurationInput').value = edu.duration_minutes;
+                document.getElementById('eduUrlInput').value = edu.content_url;
+                document.getElementById('eduMandatoryInput').checked = edu.is_mandatory;
+                document.getElementById('eduActiveInput').checked = edu.status === 'active';
+            } else {
+                title.textContent = '교육자료 추가';
+                form.reset();
+                document.getElementById('eduDurationInput').value = 60;
+                document.getElementById('eduActiveInput').checked = true;
+            }
+
+            document.getElementById('eduModal').classList.remove('hidden');
+        }
+
+        function closeEduModal() {
+            document.getElementById('eduModal').classList.add('hidden');
+            editingEduId = null;
+        }
+
+        function saveEducationContent() {
+            const title = document.getElementById('eduTitleInput').value;
+            const description = document.getElementById('eduDescriptionInput').value;
+            const category = document.getElementById('eduCategoryInput').value;
+            const contentType = document.getElementById('eduTypeInput').value;
+            const duration = parseInt(document.getElementById('eduDurationInput').value);
+            const url = document.getElementById('eduUrlInput').value;
+            const isMandatory = document.getElementById('eduMandatoryInput').checked;
+            const isActive = document.getElementById('eduActiveInput').checked;
+
+            if (!title || !category || !url) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            if (editingEduId) {
+                const index = educationContents.findIndex(e => e.id === editingEduId);
+                if (index !== -1) {
+                    educationContents[index] = {
+                        ...educationContents[index],
+                        title, description, category, content_type: contentType,
+                        duration_minutes: duration, content_url: url,
+                        is_mandatory: isMandatory, status: isActive ? 'active' : 'inactive'
+                    };
+                }
+            } else {
+                const newId = educationContents.length > 0 ? Math.max(...educationContents.map(e => e.id)) + 1 : 1;
+                educationContents.push({
+                    id: newId,
+                    title, description, category, content_type: contentType,
+                    duration_minutes: duration, content_url: url,
+                    is_mandatory: isMandatory, status: isActive ? 'active' : 'inactive'
+                });
+            }
+
+            localStorage.setItem('kema_education_contents', JSON.stringify(educationContents));
+            closeEduModal();
+            loadEducationTable();
+            updateEduSummary();
+            loadOrganizations(); // 발송 설정 목록 갱신을 위해
+        }
+
+        function deleteEducation(id) {
+            if (!confirm('교육자료를 삭제하시겠습니까?\n이 교육을 사용 중인 발송 설정에 영향을 줄 수 있습니다.')) return;
+            educationContents = educationContents.filter(e => e.id !== id);
+            localStorage.setItem('kema_education_contents', JSON.stringify(educationContents));
+            loadEducationTable();
+            updateEduSummary();
+            loadOrganizations();
+        }
 
         /* =========================================
            백엔드 스케줄러 시뮬레이션 로직
