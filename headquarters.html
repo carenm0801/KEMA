@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>케마 KEMA - 본사 통합 관리</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>🏢 케마 KEMA</h1>
+            <p>본사 통합 관리 - 기관 관리</p>
+        </header>
+
+        <!-- 요약 카드 -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-icon">🏥</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-value" id="totalOrganizations">0</div>
+                    <div class="summary-card-label">전체 기관</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-icon">👥</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-value" id="totalAllCaregivers">0</div>
+                    <div class="summary-card-label">전체 보호사</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-icon">📨</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-value" id="activeNotifications">0</div>
+                    <div class="summary-card-label">활성 알림톡 설정</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 백엔드 스케줄러 시뮬레이션 -->
+        <div class="card mb-md" style="border-left: 5px solid var(--warning-500);">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <h2 class="card-title">🤖 자동화 시스템 모니터링 (백엔드 시뮬레이션)</h2>
+                    <span id="schedulerStatus" class="badge badge-warning">중지됨</span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btnStartScheduler" onclick="toggleScheduler()">
+                        ▶ 시스템 가동
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSystemLogs()">
+                        지우기
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: var(--spacing-md);">
+                <div id="systemLogs" style="
+                    background: #1e1e1e; 
+                    color: #d4d4d4; 
+                    font-family: 'Consolas', monospace; 
+                    padding: var(--spacing-md); 
+                    border-radius: var(--radius-md); 
+                    height: 200px; 
+                    overflow-y: auto; 
+                    font-size: 0.85rem;
+                    line-height: 1.5;
+                ">
+                    <div>[System] 준비 완료. '시스템 가동' 버튼을 눌러 백엔드 스케줄러를 시작하세요.</div>
+                    <div>[System] 설정: 매 10초마다 현재 시간과 일치하는 알림 설정을 확인합니다.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기관 관리 테이블 -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">기관 통합 관리</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="openOrgModal()">
+                        ➕ 기관 추가
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>기관명</th>
+                                <th>센터장명</th>
+                                <th>연락처</th>
+                                <th>소속 보호사 수</th>
+                                <th>교육명</th>
+                                <th>발송 요일</th>
+                                <th>발송 시간</th>
+                                <th>상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="organizationsTableBody">
+                            <!-- 동적으로 생성됨 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기관 추가/수정 모달 -->
+    <div id="orgModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="orgModalTitle">기관 추가</h3>
+                <button class="modal-close" onclick="closeOrgModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="orgForm">
+                    <div class="form-group mb-md">
+                        <label class="form-label required">기관명</label>
+                        <input type="text" id="orgNameInput" class="form-input" required>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label required">센터장명</label>
+                        <input type="text" id="orgDirectorInput" class="form-input" required>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label required">연락처</label>
+                        <input type="text" id="orgPhoneInput" class="form-input" required>
+                    </div>
+                    <div class="form-group mb-md">
+                        <label class="form-label">주소</label>
+                        <input type="text" id="orgAddressInput" class="form-input">
+                    </div>
+                    <div class="form-group bg-neutral-50 p-md rounded">
+                        <label class="form-label">상태</label>
+                        <select id="orgStatusInput" class="form-select">
+                            <option value="active">활성 (Active)</option>
+                            <option value="suspended">정지 (Suspended)</option>
+                            <option value="inactive">비활성 (Inactive)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOrgModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveOrganization()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기관 상세 정보 모달 -->
+    <div id="detailModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="detailModalTitle">기관 상세 정보</h3>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 기관 기본 정보 -->
+                <h4 class="form-label"
+                    style="margin-bottom: var(--spacing-sm); font-size: 1.1rem; border-bottom: 2px solid var(--primary-100); padding-bottom: 8px;">
+                    🏢 기관 정보</h4>
+                <div id="detailOrgInfo"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+                    <!-- JS로 렌더링 -->
+                </div>
+
+                <!-- 소속 보호사 목록 -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm); border-bottom: 2px solid var(--primary-100); padding-bottom: 8px;">
+                    <h4 class="form-label" style="margin-bottom: 0; font-size: 1.1rem;">👥 소속 요양보호사</h4>
+                    <span class="badge badge-primary" id="caregiverCount">0명</span>
+                </div>
+
+                <div class="table-container"
+                    style="max-height: 300px; overflow-y: auto; border: 1px solid var(--neutral-200); border-radius: var(--radius-md);">
+                    <table class="table">
+                        <thead style="position: sticky; top: 0; background: var(--neutral-50); z-index: 1;">
+                            <tr>
+                                <th>이름</th>
+                                <th>연락처</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailCaregiverTableBody">
+                            <!-- JS로 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-item.full-width {
+            grid-column: span 2;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--neutral-500);
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: var(--neutral-800);
+            font-weight: 500;
+        }
+    </style>
+
+    <!-- 발송 설정 모달 -->
+    <div id="notificationModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">알림톡 발송 설정</h3>
+                <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-md">
+                    <label class="form-label">기관명</label>
+                    <div id="orgName"
+                        style="font-weight: 600; color: var(--neutral-900); padding: var(--spacing-sm) 0;"></div>
+                </div>
+                <form id="notificationForm">
+                    <!-- 교육 콘텐츠 선택 -->
+                    <div class="form-group mb-md">
+                        <label class="form-label required" for="educationContent">교육 콘텐츠</label>
+                        <select id="educationContent" class="form-select" required>
+                            <option value="">교육을 선택하세요</option>
+                            <!-- 동적으로 생성됨 -->
+                        </select>
+                        <small
+                            style="color: var(--neutral-600); font-size: var(--font-size-xs); margin-top: var(--spacing-xs);">
+                            이 기관에 발송할 교육 자료를 선택하세요
+                        </small>
+                    </div>
+
+                    <!-- 발송 시간 -->
+                    <div class="form-group mb-md">
+                        <label class="form-label required" for="sendTime">발송 시간</label>
+                        <input type="time" id="sendTime" class="form-input" required>
+                    </div>
+
+                    <!-- 발송 요일 선택 -->
+                    <div class="form-group mb-md">
+                        <label class="form-label required">발송 요일</label>
+                        <div class="weekday-selector">
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="월">
+                                <span>월</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="화">
+                                <span>화</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="수">
+                                <span>수</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="목">
+                                <span>목</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="금">
+                                <span>금</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="토">
+                                <span>토</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" name="weekday" value="일">
+                                <span>일</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 메시지 편집 -->
+                    <div class="form-group mb-md">
+                        <label class="form-label required" for="messageTemplate">알림톡 메시지</label>
+                        <textarea id="messageTemplate" class="form-textarea" rows="6" required
+                            placeholder="알림톡 메시지를 입력하세요..."></textarea>
+                        <div class="message-variables">
+                            <small style="color: var(--neutral-600); font-size: var(--font-size-xs);">
+                                사용 가능한 변수:
+                                <button type="button" class="variable-tag" onclick="insertVariable('{기관명}')">
+                                    {기관명}
+                                </button>
+                                <button type="button" class="variable-tag" onclick="insertVariable('{보호사명}')">
+                                    {보호사명}
+                                </button>
+                                <button type="button" class="variable-tag" onclick="insertVariable('{교육명}')">
+                                    {교육명}
+                                </button>
+                                <button type="button" class="variable-tag" onclick="insertVariable('{발송일시}')">
+                                    {발송일시}
+                                </button>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 -->
+                    <div class="form-group mb-md">
+                        <label class="form-label">메시지 미리보기</label>
+                        <div class="message-preview" id="messagePreview">
+                            미리보기가 여기에 표시됩니다.
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary mt-md" onclick="updatePreview()">
+                            🔄 미리보기 새로고침
+                        </button>
+                    </div>
+
+                    <!-- 활성화 체크박스 -->
+                    <div class="form-group">
+                        <label class="form-label" style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <input type="checkbox" id="isActive" style="width: 18px; height: 18px;">
+                            <span>알림톡 발송 활성화</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeNotificationModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveNotificationSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="mockData.js"></script>
+    <script>
+        // 현재 편집 중인 기관 ID
+        let editingOrganizationId = null;
+        let editingOrgDataId = null; // 기관 정보 수정용 ID
+        let organizations = []; // 로컬 데이터
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initOrganizations();
+            loadOrganizations();
+            updateSummaryCards();
+        });
+
+        // 데이터 초기화 (Mock -> LocalStorage)
+        function initOrganizations() {
+            const stored = localStorage.getItem('kema_organizations');
+            if (stored) {
+                organizations = JSON.parse(stored);
+            } else {
+                organizations = [...mockOrganizations];
+                localStorage.setItem('kema_organizations', JSON.stringify(organizations));
+            }
+        }
+
+        // 요약 카드 업데이트
+        function updateSummaryCards() {
+            const totalOrgs = organizations.length;
+            const totalCaregivers = mockCaregivers.length;
+            const activeNotifications = mockNotificationSettings.filter(s => s.is_active).length;
+
+            document.getElementById('totalOrganizations').textContent = totalOrgs;
+            document.getElementById('totalAllCaregivers').textContent = totalCaregivers;
+            document.getElementById('activeNotifications').textContent = activeNotifications;
+        }
+
+        // 기관별 보호사 수 계산
+        function getCaregiversCount(organizationId) {
+            return mockCaregivers.filter(c => c.organization_id === organizationId).length;
+        }
+
+        // 기관별 발송 설정 가져오기
+        function getNotificationSettings(organizationId) {
+            return mockNotificationSettings.find(s => s.organization_id === organizationId);
+        }
+
+        // 기관 목록 로드
+        function loadOrganizations() {
+            const tbody = document.getElementById('organizationsTableBody');
+
+            tbody.innerHTML = organizations.map(org => {
+                const caregiversCount = getCaregiversCount(org.id);
+                const settings = getNotificationSettings(org.id);
+
+                // 교육 콘텐츠 이름 가져오기
+                let educationName = '-';
+                if (settings && settings.education_content_id) {
+                    const education = mockEducationContents.find(e => e.id === settings.education_content_id);
+                    if (education) {
+                        educationName = education.title;
+                    }
+                }
+
+                return `
+          <tr>
+            <td><strong>${org.name}</strong></td>
+            <td>${org.director_name}</td>
+            <td>${org.phone}</td>
+            <td>
+              <span class="badge badge-info">${caregiversCount}명</span>
+            </td>
+            <td>${educationName}</td>
+            <td>${settings ? settings.send_days : '-'}</td>
+            <td>${settings ? formatTime(settings.send_time) : '-'}</td>
+            <td>${getStatusBadge(org.status)}</td>
+            <td>
+              <div class="action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; min-width: 140px;">
+                <button class="btn btn-sm btn-primary" onclick="openNotificationModal(${org.id})" style="grid-column: span 2;">
+                  ⚙️ 발송
+                </button>
+                <button class="btn btn-sm btn-secondary" onclick="viewDetails(${org.id})">
+                  👁️ 상세
+                </button>
+                <button class="btn btn-sm btn-secondary" onclick="openOrgModal(${org.id})">
+                  ✏️ 수정
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteOrganization(${org.id})" style="grid-column: span 2;">
+                  🗑️ 삭제
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+            }).join('');
+        }
+
+        // 기관 관리 모달 열기
+        function openOrgModal(orgId = null) {
+            editingOrgDataId = orgId;
+            const title = document.getElementById('orgModalTitle');
+            const form = document.getElementById('orgForm');
+
+            if (orgId) {
+                // 수정
+                const org = organizations.find(o => o.id === orgId);
+                if (!org) return;
+                title.textContent = '기관 정보 수정';
+                document.getElementById('orgNameInput').value = org.name;
+                document.getElementById('orgDirectorInput').value = org.director_name;
+                document.getElementById('orgPhoneInput').value = org.phone;
+                document.getElementById('orgAddressInput').value = org.address || '';
+                document.getElementById('orgStatusInput').value = org.status;
+            } else {
+                // 추가
+                title.textContent = '기관 추가';
+                form.reset();
+                document.getElementById('orgStatusInput').value = 'active';
+            }
+
+            document.getElementById('orgModal').classList.remove('hidden');
+        }
+
+        // 기관 관리 모달 닫기
+        function closeOrgModal() {
+            document.getElementById('orgModal').classList.add('hidden');
+            editingOrgDataId = null;
+        }
+
+        // 기관 저장 (추가/수정)
+        function saveOrganization() {
+            const name = document.getElementById('orgNameInput').value;
+            const director = document.getElementById('orgDirectorInput').value;
+            const phone = document.getElementById('orgPhoneInput').value;
+            const address = document.getElementById('orgAddressInput').value;
+            const status = document.getElementById('orgStatusInput').value;
+
+            if (!name || !director || !phone) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            if (editingOrgDataId) {
+                // 수정
+                const index = organizations.findIndex(o => o.id === editingOrgDataId);
+                if (index !== -1) {
+                    organizations[index] = { ...organizations[index], name, director_name: director, phone, address, status };
+                }
+            } else {
+                // 추가
+                const newId = organizations.length > 0 ? Math.max(...organizations.map(o => o.id)) + 1 : 1;
+                organizations.push({
+                    id: newId,
+                    name,
+                    director_name: director,
+                    phone,
+                    address,
+                    business_number: '000-00-00000', // 임시
+                    status,
+                    email: '-'
+                });
+            }
+
+            localStorage.setItem('kema_organizations', JSON.stringify(organizations));
+            closeOrgModal();
+            loadOrganizations();
+            updateSummaryCards();
+        }
+
+        // 기관 삭제
+        function deleteOrganization(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            organizations = organizations.filter(o => o.id !== id);
+            localStorage.setItem('kema_organizations', JSON.stringify(organizations));
+            loadOrganizations();
+            updateSummaryCards();
+        }
+
+        // 시간 포맷팅 (HH:MM:SS -> HH:MM)
+        function formatTime(timeString) {
+            if (!timeString) return '-';
+            return timeString.substring(0, 5);
+        }
+
+        // 상태 배지 생성
+        function getStatusBadge(status) {
+            const statusMap = {
+                'active': { label: '활성', class: 'badge-success' },
+                'inactive': { label: '비활성', class: 'badge-warning' },
+                'suspended': { label: '정지', class: 'badge-danger' }
+            };
+            const { label, class: badgeClass } = statusMap[status] || { label: status, class: 'badge-info' };
+            return `<span class="badge ${badgeClass}">${label}</span>`;
+        }
+
+        // 알림톡 발송 설정 모달 열기
+        function openNotificationModal(organizationId) {
+            editingOrganizationId = organizationId;
+            const org = organizations.find(o => o.id === organizationId);
+            const settings = getNotificationSettings(organizationId);
+
+            if (!org) return;
+
+            document.getElementById('orgName').textContent = org.name;
+
+            // 교육 콘텐츠 목록 로드
+            loadEducationContents();
+
+            if (settings) {
+                // 교육 콘텐츠 선택
+                document.getElementById('educationContent').value = settings.education_content_id;
+
+                document.getElementById('sendTime').value = formatTime(settings.send_time);
+
+                // 요일 체크박스 설정
+                const weekdays = settings.send_days.split(',');
+                document.querySelectorAll('input[name="weekday"]').forEach(checkbox => {
+                    checkbox.checked = weekdays.includes(checkbox.value);
+                });
+
+                // 메시지 템플릿 설정
+                document.getElementById('messageTemplate').value = settings.message_template || getDefaultMessageTemplate();
+
+                document.getElementById('isActive').checked = settings.is_active;
+            } else {
+                document.getElementById('notificationForm').reset();
+                document.getElementById('isActive').checked = true;
+                document.getElementById('messageTemplate').value = getDefaultMessageTemplate();
+            }
+
+            // 미리보기 업데이트
+            updatePreview();
+
+            document.getElementById('notificationModal').classList.remove('hidden');
+        }
+
+        // 교육 콘텐츠 목록 로드
+        function loadEducationContents() {
+            const select = document.getElementById('educationContent');
+
+            // 기존 옵션 제거 (첫 번째 placeholder 제외)
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // 활성화된 교육 콘텐츠만 로드
+            const activeContents = mockEducationContents.filter(c => c.status === 'active');
+
+            activeContents.forEach(content => {
+                const option = document.createElement('option');
+                option.value = content.id;
+                option.textContent = `${content.title} ${content.is_mandatory ? '(필수)' : ''}`;
+                select.appendChild(option);
+            });
+        }
+
+        // 기본 메시지 템플릿
+        function getDefaultMessageTemplate() {
+            return `안녕하세요, {기관명}입니다.
+
+{보호사명}님, {교육명} 교육을 수강해주세요.
+
+교육 일정: {발송일시}
+
+교육을 완료하시면 이수증이 발급됩니다.
+
+감사합니다.`;
+        }
+
+        // 변수 삽입 함수
+        function insertVariable(variable) {
+            const textarea = document.getElementById('messageTemplate');
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+
+            textarea.value = textBefore + variable + textAfter;
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = cursorPos + variable.length;
+
+            // 미리보기 자동 업데이트
+            updatePreview();
+        }
+
+        // 메시지 미리보기 업데이트
+        function updatePreview() {
+            const org = organizations.find(o => o.id === editingOrganizationId);
+            if (!org) return;
+
+            const template = document.getElementById('messageTemplate').value;
+            const sampleCaregiver = mockCaregivers.find(c => c.organization_id === editingOrganizationId);
+            const sampleEducation = mockEducationContents[0];
+
+            // 변수 치환
+            let preview = template
+                .replace(/{기관명}/g, org.name)
+                .replace(/{보호사명}/g, sampleCaregiver ? sampleCaregiver.name : '홍길동')
+                .replace(/{교육명}/g, sampleEducation ? sampleEducation.title : '감염 관리 기본 교육')
+                .replace(/{발송일시}/g, new Date().toLocaleString('ko-KR'));
+
+            document.getElementById('messagePreview').textContent = preview;
+        }
+
+        // 모달 닫기
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.add('hidden');
+            editingOrganizationId = null;
+        }
+
+        // 알림톡 설정 저장
+        function saveNotificationSettings() {
+            const educationContentId = parseInt(document.getElementById('educationContent').value);
+            const sendTime = document.getElementById('sendTime').value;
+            const isActive = document.getElementById('isActive').checked;
+            const messageTemplate = document.getElementById('messageTemplate').value;
+
+            // 선택된 요일 가져오기
+            const selectedWeekdays = Array.from(document.querySelectorAll('input[name="weekday"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            // 유효성 검사
+            if (!educationContentId) {
+                alert('교육 콘텐츠를 선택해주세요.');
+                return;
+            }
+
+            if (!sendTime) {
+                alert('발송 시간은 필수 입력 항목입니다.');
+                return;
+            }
+
+            if (selectedWeekdays.length === 0) {
+                alert('최소 1개 이상의 발송 요일을 선택해주세요.');
+                return;
+            }
+
+            if (!messageTemplate.trim()) {
+                alert('알림톡 메시지를 입력해주세요.');
+                return;
+            }
+
+            const existingIndex = mockNotificationSettings.findIndex(
+                s => s.organization_id === editingOrganizationId
+            );
+
+            const settingData = {
+                organization_id: editingOrganizationId,
+                education_content_id: educationContentId,
+                send_time: sendTime + ':00',
+                send_days: selectedWeekdays.join(','),
+                message_template: messageTemplate,
+                is_active: isActive
+            };
+
+            if (existingIndex !== -1) {
+                // 수정
+                mockNotificationSettings[existingIndex] = {
+                    ...mockNotificationSettings[existingIndex],
+                    ...settingData
+                };
+            } else {
+                // 추가
+                const newId = Math.max(...mockNotificationSettings.map(s => s.id)) + 1;
+                mockNotificationSettings.push({
+                    id: newId,
+                    ...settingData
+                });
+            }
+
+            closeNotificationModal();
+            loadOrganizations();
+            updateSummaryCards();
+
+            const selectedContent = mockEducationContents.find(c => c.id === educationContentId);
+            alert(`알림톡 발송 설정이 저장되었습니다.\n교육: ${selectedContent ? selectedContent.title : ''}`);
+        }
+
+        // 기관 상세 보기
+        function viewDetails(organizationId) {
+            const org = organizations.find(o => o.id === organizationId);
+            const caregivers = mockCaregivers.filter(c => c.organization_id === organizationId);
+
+            if (!org) return;
+
+            // 모달 제목 설정
+            document.getElementById('detailModalTitle').textContent = `${org.name} 상세 정보`;
+
+            // 기관 기본 정보 렌더링
+            const infoContainer = document.getElementById('detailOrgInfo');
+            infoContainer.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">센터장명</span>
+                    <span class="info-value">${org.director_name}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">연락처</span>
+                    <span class="info-value">${org.phone}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">이메일</span>
+                    <span class="info-value">${org.email || '-'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">사업자번호</span>
+                    <span class="info-value">${org.business_number}</span>
+                </div>
+                <div class="info-item full-width">
+                    <span class="info-label">주소</span>
+                    <span class="info-value">${org.address || '-'}</span>
+                </div>
+            `;
+
+            // 소속 보호사 목록 렌더링
+            const caregiverTbody = document.getElementById('detailCaregiverTableBody');
+            if (caregivers.length === 0) {
+                caregiverTbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--neutral-500);">등록된 보호사가 없습니다.</td></tr>';
+            } else {
+                caregiverTbody.innerHTML = caregivers.map((c, idx) => `
+                    <tr>
+                        <td>${c.name}</td>
+                        <td>${c.phone}</td>
+                        <td>${getStatusBadge(c.status)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            document.getElementById('caregiverCount').textContent = `${caregivers.length}명`;
+
+            // 모달 열기
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        // 상세 모달 닫기
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // 상태 텍스트 변환
+        function getStatusText(status) {
+            const statusMap = {
+                'active': '재직 중',
+                'inactive': '휴직',
+                'resigned': '퇴사'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('notificationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'notificationModal') {
+                closeNotificationModal();
+            }
+        });
+
+        /* =========================================
+           백엔드 스케줄러 시뮬레이션 로직
+           ========================================= */
+        let schedulerInterval = null;
+        let isSchedulerRunning = false;
+
+        // 로그 출력 함수
+        function addSystemLog(message, type = 'info') {
+            const logs = document.getElementById('systemLogs');
+            const entry = document.createElement('div');
+            const time = new Date().toLocaleTimeString('ko-KR');
+
+            let color = '#d4d4d4'; // 기본 (info)
+            if (type === 'success') color = '#4ade80'; // 녹색
+            if (type === 'warning') color = '#fbbf24'; // 노란색
+            if (type === 'error') color = '#f87171';   // 빨간색
+
+            entry.style.color = color;
+            entry.style.marginBottom = '4px';
+            entry.innerText = `[${time}] ${message}`;
+
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight; // 자동 스크롤
+        }
+
+        function clearSystemLogs() {
+            document.getElementById('systemLogs').innerHTML = '';
+            addSystemLog('로그가 초기화되었습니다.');
+        }
+
+        // 스케줄러 시작/중지 토글
+        function toggleScheduler() {
+            const statusBadge = document.getElementById('schedulerStatus');
+            const btn = document.getElementById('btnStartScheduler');
+
+            if (isSchedulerRunning) {
+                // 중지 로직
+                clearInterval(schedulerInterval);
+                isSchedulerRunning = false;
+                statusBadge.textContent = '중지됨';
+                statusBadge.className = 'badge badge-warning';
+                btn.textContent = '▶ 시스템 가동';
+                btn.classList.replace('btn-danger', 'btn-primary');
+                addSystemLog('스케줄러가 중지되었습니다.', 'warning');
+            } else {
+                // 시작 로직
+                isSchedulerRunning = true;
+                statusBadge.textContent = '가동 중';
+                statusBadge.className = 'badge badge-success';
+                btn.textContent = '■ 시스템 중지';
+                btn.classList.replace('btn-primary', 'btn-danger');
+
+                addSystemLog('스케줄러가 시작되었습니다. (주기: 10초)', 'success');
+
+                // 즉시 한 번 실행
+                checkScheduleAndSend();
+
+                // 10초마다 실행 (테스트용)
+                schedulerInterval = setInterval(checkScheduleAndSend, 10000);
+            }
+        }
+
+        // 핵심 스케줄러 로직 (Backend Logic)
+        function checkScheduleAndSend() {
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const now = new Date();
+            const currentDay = days[now.getDay()];
+            const currentTime = now.toTimeString().substring(0, 5); // "14:30" 형식
+
+            addSystemLog(`스케줄 확인 중... (${currentDay}요일 ${currentTime})`);
+
+            // 1. 활성화된 설정 필터링
+            // 실제 환경에서는 DB 쿼리로 수행됨: SELECT * FROM notification_settings WHERE is_active = true
+            const activeSettings = mockNotificationSettings.filter(s => s.is_active);
+
+            let matchedCount = 0;
+
+            activeSettings.forEach(setting => {
+                // 2. 요일 매칭 확인
+                if (!setting.send_days.includes(currentDay)) return;
+
+                // 3. 시간 매칭 확인
+                // 테스트를 위해 시간체크를 생략하고 싶다면 아래 줄을 주석 처리하거나, 
+                // 현재 시간이 설정된 시간과 '비슷하면' 보내는 식으로 로직 수정 가능
+                // 여기서는 시뮬레이션의 편의를 위해 '시간'까지 정확히 맞아야 한다고 가정하되,
+                // 테스트를 위해 강제로 매칭되는 설정을 하나 추가하는 것이 좋음.
+
+                const settingTime = setting.send_time.substring(0, 5);
+
+                // *** 테스트용 로직: 만약 설정된 시간이 현재 시간과 같다면 발송 ***
+                // 실제로는 분 단위 cron job이므로 정확히 일치할 때만 보냄
+
+                if (settingTime === currentTime) {
+                    matchedCount++;
+                    triggerNotification(setting);
+                }
+            });
+
+            if (matchedCount === 0) {
+                // 매칭되는게 없으면 아무것도 안 함 (로그가 너무 시끄러울 수 있으므로 생략)
+                // addSystemLog('발송 대상 없음.');
+            }
+        }
+
+        // 알림톡 발송 트리거 (Backend Logic Simulation)
+        function triggerNotification(setting) {
+            const org = organizations.find(o => o.id === setting.organization_id);
+            if (!org) return;
+
+            addSystemLog(`✅ [MATCH] 발송 조건 일치! 기관명: ${org.name}`, 'success');
+
+            // 4. 대상 요양보호사 조회
+            const targetCaregivers = mockCaregivers.filter(c =>
+                c.organization_id === org.id && c.status === 'active'
+            );
+
+            addSystemLog(`   - 대상 요양보호사 수: ${targetCaregivers.length}명`);
+
+            if (targetCaregivers.length > 0) {
+                // 교육 정보 조회
+                const education = mockEducationContents.find(e => e.id === setting.education_content_id);
+                const educationTitle = education ? education.title : '기본 교육';
+                const educationId = education ? education.id : 1;
+
+                let successCount = 0;
+                let failCount = 0;
+                let skipCount = 0;
+
+                // 각 보호사별로 개별 메시지 생성 및 발송 시뮬레이션
+                targetCaregivers.forEach(caregiver => {
+                    // 1. 중복 발송 방지 (이번 달 이수 여부 체크)
+                    if (isCompletedThisMonth(caregiver.id, educationId)) {
+                        addSystemLog(`   ⏭️ [SKIP] ${caregiver.name} - 이미 이번 달 교육(${educationTitle})을 이수했습니다.`, 'warning');
+                        skipCount++;
+                        return; // 발송 건너뛰기
+                    }
+
+                    // 2. 발송 실패 시뮬레이션 (랜덤 10% 확률로 실패 발생)
+                    // 테스트를 위해 Math.random() < 0.1 사용
+                    const isFailure = Math.random() < 0.1;
+
+                    if (isFailure) {
+                        addSystemLog(`   ❌ [실패] ${caregiver.name} (${caregiver.phone}) - 전화번호 형식 오류`, 'error');
+                        saveNotificationLog(caregiver.id, org.id, educationId, 'failed', '전화번호 형식 오류');
+                        failCount++;
+                        return;
+                    }
+
+                    // 고유 교육 URL 생성 (UUID 시뮬레이션)
+                    const uniqueId = `edu_${educationId}_${caregiver.id}_${Date.now().toString(36)}`;
+                    const educationUrl = `https://kema.link/v/${uniqueId}`;
+
+                    // 메시지 템플릿 치환
+                    let messageBody = setting.message_template || getDefaultMessageTemplate();
+                    messageBody = messageBody
+                        .replace(/{기관명}/g, org.name)
+                        .replace(/{보호사명}/g, caregiver.name)
+                        .replace(/{교육명}/g, educationTitle)
+                        .replace(/{발송일시}/g, new Date().toLocaleString('ko-KR'));
+
+                    // API Payload (Log Only)
+                    const apiPayload = {
+                        receiver_phone: caregiver.phone,
+                        message: messageBody,
+                        url: educationUrl
+                    };
+
+                    addSystemLog(`   🚀 [발송 완료] ${caregiver.name} (${caregiver.phone})`, 'info');
+                    // addSystemLog(`      🔗 버튼 링크: ${educationUrl}`, 'info'); 
+
+                    // 성공 로그 저장
+                    saveNotificationLog(caregiver.id, org.id, educationId, 'sent', null);
+                    successCount++;
+                });
+
+                addSystemLog(`   ✨ 처리 결과: 성공 ${successCount}건, 실패 ${failCount}건, 스킵(이수완료) ${skipCount}건`, 'success');
+
+            } else {
+                addSystemLog(`   ⚠️ 주의: 발송 대상 요양보호사가 없습니다.`, 'warning');
+            }
+        }
+
+        // 헬퍼 함수: 이번 달 교육 이수 여부 확인
+        function isCompletedThisMonth(caregiverId, educationContentId) {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-indexed
+
+            return mockCompletionRecords.some(record => {
+                if (record.caregiver_id !== caregiverId ||
+                    record.education_content_id !== educationContentId ||
+                    record.status !== 'completed') {
+                    return false;
+                }
+
+                // 실제 데이터의 completed_at 문자열을 파싱
+                const completedDate = new Date(record.completed_at);
+                return completedDate.getFullYear() === currentYear &&
+                    completedDate.getMonth() === currentMonth;
+            });
+        }
+
+        // 헬퍼 함수: 발송 로그 저장 (localStorage 활용 - 센터장 대시보드 공유용)
+        function saveNotificationLog(caregiverId, orgId, contentId, status, errorMessage) {
+            const logs = JSON.parse(localStorage.getItem('kema_notification_logs') || '[]');
+
+            logs.unshift({
+                id: Date.now() + Math.random(),
+                caregiver_id: caregiverId,
+                organization_id: orgId,
+                education_content_id: contentId,
+                status: status, // 'sent' or 'failed'
+                error_message: errorMessage,
+                sent_at: new Date().toISOString()
+            });
+
+            // 최대 100개까지만 저장 (데모용)
+            if (logs.length > 100) logs.pop();
+
+            localStorage.setItem('kema_notification_logs', JSON.stringify(logs));
+        }
+    </script>
+</body>
+
+</html>

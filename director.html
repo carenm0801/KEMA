@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>케마 KEMA - 센터장 관리자</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="header">
+      <h1>🏥 케마 KEMA</h1>
+      <p id="headerSubtitle">센터장 관리자 - 요양보호사 관리</p>
+    </header>
+
+    <!-- 요약 카드 -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-card-icon">👥</div>
+        <div class="summary-card-value" id="totalCaregivers">0</div>
+        <div class="summary-card-label">전체 보호사</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon">✅</div>
+        <div class="summary-card-value" id="completedCaregivers">0</div>
+        <div class="summary-card-label">이수 완료 인원</div>
+      </div>
+    </div>
+
+    <!-- 보호사 관리 테이블 -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">보호사 관리</h2>
+        <div class="action-buttons">
+          <button class="btn btn-secondary" onclick="openLogModal()">
+            📋 알림 발송 이력
+          </button>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            ➕ 보호사 추가
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>연락처</th>
+                <th>생년월일</th>
+                <th>자격증 번호</th>
+                <th>입사일</th>
+                <th>상태</th>
+                <th>이수 여부</th>
+                <th>작업</th>
+              </tr>
+            </thead>
+            <tbody id="caregiversTableBody">
+              <!-- 동적으로 생성됨 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보호사 추가/수정 모달 -->
+  <div id="caregiverModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">보호사 추가</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="caregiverForm" class="form-grid">
+          <div class="form-group">
+            <label class="form-label required" for="name">이름</label>
+            <input type="text" id="name" class="form-input" placeholder="예: 김영희" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="phone">연락처</label>
+            <input type="tel" id="phone" class="form-input" placeholder="010-1234-5678" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="birthDate">생년월일</label>
+            <input type="date" id="birthDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="certificateNumber">자격증 번호</label>
+            <input type="text" id="certificateNumber" class="form-input" placeholder="CG-2020-12345">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hireDate">입사일</label>
+            <input type="date" id="hireDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="status">상태</label>
+            <select id="status" class="form-select" required>
+              <option value="active">재직 중</option>
+              <option value="inactive">휴직</option>
+              <option value="resigned">퇴사</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveCaregiver()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 알림 발송 이력 모달 -->
+  <div id="logModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📋 알림톡 발송 이력</h3>
+        <button class="modal-close" onclick="closeLogModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>발송 일시</th>
+                <th>보호사명</th>
+                <th>교육명</th>
+                <th>상태</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody">
+              <!-- 로그 데이터 표시 -->
+            </tbody>
+          </table>
+          <div id="noLogsMessage" style="text-align: center; padding: 20px; color: #666; display: none;">
+            발송 이력이 없습니다.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeLogModal()">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보고서 섹션 -->
+  <div id="reportSection" class="card mt-md">
+    <div class="card-header">
+      <h2 class="card-title">📊 보고서 및 데이터 관리</h2>
+      <div class="action-buttons no-print">
+        <button class="btn btn-primary" onclick="printReport()">
+          🖨️ 보고서 인쇄
+        </button>
+        <button class="btn btn-success" onclick="exportToCSV()">
+          💾 엑셀 다운로드
+        </button>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 20px;">
+      <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+        <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">[2026년 01월] 직무교육 실시 결과 보고서</h2>
+        <p style="font-size: 16px;">교육명: <strong>감염 관리 기본 교육</strong> | 교육기간: 2026.01.01 ~ 2026.01.31</p>
+      </div>
+      <table class="table" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+          <tr style="background: #f8f9fa;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">기관명</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">보호사명</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">연락처</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">이수 상태</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">점수</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">완료 일시</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody">
+          <!-- 데이터 로드 -->
+        </tbody>
+      </table>
+      <div style="margin-top: 50px; text-align: center;">
+        <h3 style="font-size: 20px; margin-bottom: 40px;">위와 같이 교육을 실시하였음을 보고합니다.</h3>
+        <p style="margin-bottom: 30px; font-size: 16px;">2026년 01월 16일</p>
+        <div style="font-size: 24px; font-weight: bold; position: relative; display: inline-block;">
+          <span id="orgSignature">케마 재가노인복지센터장 (인)</span>
+          <div
+            style="position: absolute; right: -40px; top: -10px; width: 60px; height: 60px; border: 3px solid red; border-radius: 50%; color: red; font-size: 14px; line-height: 55px; transform: rotate(-15deg); opacity: 0.8;">
+            직인</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="mockData.js"></script>
+  <script>
+    // 현재 로그인한 기관 ID (localStorage에서 가져옴)
+    const CURRENT_ORGANIZATION_ID = parseInt(localStorage.getItem('kema_current_org') || '1');
+    const CURRENT_ORG_DATA = mockOrganizations.find(org => org.id === CURRENT_ORGANIZATION_ID) || mockOrganizations[0];
+
+    // 현재 편집 중인 보호사 ID
+    let editingCaregiverId = null;
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', () => {
+      initPage();
+      loadCaregivers();
+      updateSummaryCards();
+      loadReportData(); // 보고서 데이터 로드
+    });
+
+    // 페이지 초기 텍스트 설정
+    function initPage() {
+      // 헤더 서브타이틀 업데이트
+      document.getElementById('headerSubtitle').textContent = `${CURRENT_ORG_DATA.name} - 요양보호사 관리`;
+      // 보고서 하단 서명 업데이트
+      document.getElementById('orgSignature').textContent = `${CURRENT_ORG_DATA.name} 센터장 (인)`;
+    }
+
+    // 보고서 데이터 로드
+    function loadReportData() {
+      const tbody = document.getElementById('reportTableBody');
+      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const allRecords = getAllCompletionRecords();
+
+      // 데이터 매핑
+      const reportData = orgCaregivers.map(caregiver => {
+        const record = allRecords.find(r => r.caregiver_id === caregiver.id && r.education_content_id === 1 && r.status === 'completed');
+        return {
+          orgName: CURRENT_ORG_DATA.name,
+          name: caregiver.name,
+          phone: caregiver.phone,
+          status: record ? '이수 완료' : '미이수',
+          score: record ? '100점' : '-',
+          completedAt: record ? new Date(record.completed_at).toLocaleDateString() : '-'
+        };
+      });
+
+      tbody.innerHTML = reportData.map(d => `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.orgName}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.name}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.phone}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.status}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.score}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${d.completedAt}</td>
+            </tr>
+        `).join('');
+    }
+
+    // 보고서 인쇄
+    function printReport() {
+      window.print();
+    }
+
+    // 엑셀(CSV) 다운로드
+    function exportToCSV() {
+      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const allRecords = getAllCompletionRecords();
+
+      let csvContent = "\uFEFF"; // BOM (한글 깨짐 방지)
+      csvContent += "기관명,성명,연락처,교육명,이수여부,점수,이수일시\n";
+
+      orgCaregivers.forEach(caregiver => {
+        const record = allRecords.find(r => r.caregiver_id === caregiver.id && r.education_content_id === 1 && r.status === 'completed');
+
+        const row = [
+          CURRENT_ORG_DATA.name,
+          caregiver.name,
+          caregiver.phone,
+          '감염 관리 기본 교육',
+          record ? '이수 완료' : '미이수',
+          record ? '100' : '0',
+          record ? new Date(record.completed_at).toLocaleString() : '-'
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `교육이수결과_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 통합 이수 기록 가져오기 (Mock + LocalStorage)
+    function getAllCompletionRecords() {
+      const localRecords = JSON.parse(localStorage.getItem('kema_completion_records') || '[]');
+      return [...mockCompletionRecords, ...localRecords];
+    }
+
+    // 요약 카드 업데이트
+    function updateSummaryCards() {
+      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+      const totalCount = orgCaregivers.length;
+
+      // 이수 완료 인원 계산 (최소 1개 이상의 교육을 완료한 보호사)
+      const allRecords = getAllCompletionRecords();
+      const completedCaregiverIds = new Set(
+        allRecords
+          .filter(r => r.status === 'completed')
+          .map(r => r.caregiver_id)
+      );
+
+      const orgCompletedCount = orgCaregivers.filter(c =>
+        completedCaregiverIds.has(c.id)
+      ).length;
+
+      document.getElementById('totalCaregivers').textContent = totalCount;
+      document.getElementById('completedCaregivers').textContent = orgCompletedCount;
+    }
+
+    // 보호사 목록 로드
+    function loadCaregivers() {
+      const tbody = document.getElementById('caregiversTableBody');
+      const orgCaregivers = mockCaregivers.filter(c => c.organization_id === CURRENT_ORGANIZATION_ID);
+
+      const allRecords = getAllCompletionRecords();
+      // 감염 관리 교육(ID:1) 이수 여부를 확인한다고 가정
+      const checkCompletion = (caregiverId) => {
+        return allRecords.some(r =>
+          r.caregiver_id === caregiverId &&
+          r.education_content_id === 1 &&
+          r.status === 'completed'
+        );
+      };
+
+      tbody.innerHTML = orgCaregivers.map(caregiver => {
+        const isCompleted = checkCompletion(caregiver.id);
+        const completionBadge = isCompleted
+          ? '<span class="badge badge-success">이수 완료</span>'
+          : '<span class="badge badge-warning" style="background:#f3f4f6; color:#6b7280;">미이수</span>';
+
+        return `
+        <tr>
+          <td>${caregiver.name}</td>
+          <td>${caregiver.phone}</td>
+          <td>${caregiver.birth_date || '-'}</td>
+          <td>${caregiver.certificate_number || '-'}</td>
+          <td>${caregiver.hire_date || '-'}</td>
+          <td>${getStatusBadge(caregiver.status)}</td>
+          <td>${completionBadge}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-sm btn-secondary" onclick="editCaregiver(${caregiver.id})">
+                ✏️ 수정
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCaregiver(${caregiver.id})">
+                🗑️ 삭제
+              </button>
+            </div>
+          </td>
+        </tr>
+      `}).join('');
+    }
+
+    // 상태 배지 생성
+    function getStatusBadge(status) {
+      const statusMap = {
+        'active': { label: '재직 중', class: 'badge-success' },
+        'inactive': { label: '휴직', class: 'badge-warning' },
+        'resigned': { label: '퇴사', class: 'badge-danger' }
+      };
+      const { label, class: badgeClass } = statusMap[status] || { label: status, class: 'badge-info' };
+      return `<span class="badge ${badgeClass}">${label}</span>`;
+    }
+
+    // 보호사 추가 모달 열기
+    function openAddModal() {
+      editingCaregiverId = null;
+      document.getElementById('modalTitle').textContent = '보호사 추가';
+      document.getElementById('caregiverForm').reset();
+      document.getElementById('caregiverModal').classList.remove('hidden');
+    }
+
+    // 보호사 수정 모달 열기
+    function editCaregiver(id) {
+      editingCaregiverId = id;
+      const caregiver = mockCaregivers.find(c => c.id === id);
+
+      if (!caregiver) return;
+
+      document.getElementById('modalTitle').textContent = '보호사 수정';
+      document.getElementById('name').value = caregiver.name;
+      document.getElementById('phone').value = caregiver.phone;
+      document.getElementById('birthDate').value = caregiver.birth_date || '';
+      document.getElementById('certificateNumber').value = caregiver.certificate_number || '';
+      document.getElementById('hireDate').value = caregiver.hire_date || '';
+      document.getElementById('status').value = caregiver.status;
+
+      document.getElementById('caregiverModal').classList.remove('hidden');
+    }
+
+    // 모달 닫기
+    function closeModal() {
+      document.getElementById('caregiverModal').classList.add('hidden');
+      editingCaregiverId = null;
+    }
+
+    // 보호사 저장
+    function saveCaregiver() {
+      const formData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        birth_date: document.getElementById('birthDate').value || null,
+        certificate_number: document.getElementById('certificateNumber').value || null,
+        hire_date: document.getElementById('hireDate').value || null,
+        status: document.getElementById('status').value
+      };
+
+      // 유효성 검사
+      if (!formData.name || !formData.phone) {
+        alert('이름과 연락처는 필수 입력 항목입니다.');
+        return;
+      }
+
+      if (editingCaregiverId) {
+        // 수정
+        const index = mockCaregivers.findIndex(c => c.id === editingCaregiverId);
+        if (index !== -1) {
+          mockCaregivers[index] = {
+            ...mockCaregivers[index],
+            ...formData
+          };
+        }
+      } else {
+        // 추가
+        const newId = Math.max(...mockCaregivers.map(c => c.id)) + 1;
+        mockCaregivers.push({
+          id: newId,
+          organization_id: CURRENT_ORGANIZATION_ID,
+          ...formData
+        });
+      }
+
+      closeModal();
+      loadCaregivers();
+      updateSummaryCards();
+    }
+
+    // 보호사 삭제
+    function deleteCaregiver(id) {
+      const caregiver = mockCaregivers.find(c => c.id === id);
+      if (!caregiver) return;
+
+      if (confirm(`${caregiver.name} 보호사를 삭제하시겠습니까?`)) {
+        const index = mockCaregivers.findIndex(c => c.id === id);
+        if (index !== -1) {
+          mockCaregivers.splice(index, 1);
+          loadCaregivers();
+          updateSummaryCards();
+        }
+      }
+    }
+
+    // 모달 외부 클릭 시 닫기
+    document.getElementById('caregiverModal').addEventListener('click', (e) => {
+      if (e.target.id === 'caregiverModal') {
+        closeModal();
+      }
+    });
+
+    /* =========================================
+       알림톡 발송 이력 (로그) 기능
+       ========================================= */
+
+    function openLogModal() {
+      document.getElementById('logModal').classList.remove('hidden');
+      loadNotificationLogs();
+    }
+
+    function closeLogModal() {
+      document.getElementById('logModal').classList.add('hidden');
+    }
+
+    function loadNotificationLogs() {
+      const tbody = document.getElementById('logTableBody');
+      // localStorage에서 로그 읽어오기 (본사 페이지에서 저장한 데이터)
+      const logs = JSON.parse(localStorage.getItem('kema_notification_logs') || '[]');
+
+      // 현재 로그인한 기관의 로그만 필터링
+      const orgLogs = logs.filter(log => log.organization_id === CURRENT_ORGANIZATION_ID);
+
+      if (orgLogs.length === 0) {
+        tbody.innerHTML = '';
+        document.getElementById('noLogsMessage').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('noLogsMessage').style.display = 'none';
+
+      tbody.innerHTML = orgLogs.map(log => {
+        // 보호사 정보 찾기
+        const caregiver = mockCaregivers.find(c => c.id === log.caregiver_id);
+        const caregiverName = caregiver ? caregiver.name : '알 수 없음';
+
+        // 교육 정보 찾기
+        const education = mockEducationContents.find(e => e.id === log.education_content_id);
+        const educationTitle = education ? education.title : '기본 교육';
+
+        // 날짜 포맷팅
+        const date = new Date(log.sent_at).toLocaleString('ko-KR');
+
+        // 상태 스타일
+        const statusBadge = log.status === 'sent'
+          ? '<span class="badge badge-success">발송 성공</span>'
+          : '<span class="badge badge-danger">발송 실패</span>';
+
+        const errorMessage = log.status === 'failed' && log.error_message
+          ? `<span style="color:red; font-size:0.9em;">${log.error_message}</span>`
+          : '-';
+
+        return `
+                <tr>
+                    <td>${date}</td>
+                    <td>${caregiverName}</td>
+                    <td>${educationTitle}</td>
+                    <td>${statusBadge}</td>
+                    <td>${errorMessage}</td>
+                </tr>
+            `;
+      }).join('');
+    }
+
+    // 로그 모달 외부 클릭 닫기
+    document.getElementById('logModal').addEventListener('click', (e) => {
+      if (e.target.id === 'logModal') closeLogModal();
+    });
+  </script>
+</body>
+
+</html>

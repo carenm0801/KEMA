@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교육 이수 - 케마</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 모바일 전용 추가 스타일 */
+        body {
+            background-color: #f5f5f5;
+            padding-bottom: 40px;
+        }
+
+        .viewer-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 16:9 반응형 비디오 */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: black;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .content-body {
+            padding: 20px;
+            flex: 1;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .quiz-card {
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .quiz-question {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 12px;
+            color: var(--neutral-900);
+        }
+
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 8px;
+            background: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .option-btn:hover {
+            background-color: var(--neutral-50);
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary-500);
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="viewer-container">
+        <!-- 헤더 -->
+        <header
+            style="padding: 16px; border-bottom: 1px solid #eee; display:flex; align-items:center; justify-content:space-between; background:white; z-index:10;">
+            <h1 style="font-size: 1.1rem; margin: 0; font-weight:700; color:var(--primary-600);">📚 케마 교육센터</h1>
+            <span class="badge badge-info" id="caregiverName">로딩 중...</span>
+        </header>
+
+        <!-- 비디오 영역 -->
+        <div class="video-section">
+            <div class="video-wrapper">
+                <!-- 유튜브 API로 대체될 DIV -->
+                <div id="player"></div>
+            </div>
+            <div style="padding: 20px; background: white; border-bottom: 1px solid #f1f5f9;">
+                <span class="badge badge-primary" style="margin-bottom:8px;">필수 교육</span>
+                <h2 id="videoTitle" style="font-size: 1.25rem; margin: 0 0 8px 0; line-height:1.4;">교육 제목 로딩 중...</h2>
+                <div id="progressMsg"
+                    style="font-size: 0.9rem; color: var(--neutral-500); display:flex; align-items:center; gap:6px;">
+                    <span
+                        style="display:inline-block; width:8px; height:8px; border-radius:50%; background:orange;"></span>
+                    영상을 시청 중입니다...
+                </div>
+            </div>
+        </div>
+
+        <!-- 퀴즈 영역 (초기 숨김) -->
+        <div id="quizSection" class="content-body" style="display: none;">
+            <div style="margin-bottom:20px;">
+                <h3 style="margin:0 0 8px 0; font-size:1.15rem;">✅ 이수 확인 평가</h3>
+                <p style="color: var(--neutral-600); margin:0; font-size:0.95rem;">
+                    영상을 모두 시청하셨군요! 아래 문제를 풀어주세요.<br>
+                    (총 <span id="totalQuestions">0</span>문제 / <span style="color:#ef4444; font-weight:600;">80점</span>
+                    이상 이수 완료)
+                </p>
+            </div>
+
+            <div id="questionContainer">
+                <!-- 동적 퀴즈 생성 -->
+            </div>
+
+            <button class="btn btn-primary btn-full shadow-lg" id="btnSubmitQuiz" onclick="submitQuiz()">
+                제출하고 결과 확인
+            </button>
+        </div>
+
+        <!-- 푸터 (여백용) -->
+        <div style="height: 40px;"></div>
+    </div>
+
+    <!-- 결과 모달 -->
+    <div id="resultModal" class="modal-overlay hidden">
+        <div class="modal" style="text-align: center; padding: 40px 24px; max-width: 340px; border-radius:20px;">
+            <div id="resultIcon" style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+            <h3 id="resultTitle" style="font-size: 1.6rem; margin-bottom: 12px; font-weight:800;">이수 완료!</h3>
+            <p id="resultMsg" style="color: var(--neutral-600); margin-bottom: 24px; line-height:1.5;">축하합니다.<br>모든 교육
+                과정을 성공적으로 마쳤습니다.</p>
+
+            <div style="background: #f8fafc; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
+                <span style="font-size: 0.9rem; color: var(--neutral-500);">최종 점수</span>
+                <div id="resultScore" style="font-size: 2.5rem; font-weight: 800; color: var(--primary-600);">100점</div>
+            </div>
+
+            <button class="btn btn-primary btn-full" onclick="window.close()" style="border-radius:12px;">창 닫기</button>
+        </div>
+    </div>
+
+    <script src="mockData.js"></script>
+    <script>
+        // 1. 파라미터 파싱 (시뮬레이션: ?id=1&content=1 or token=edu_1_1_xxx)
+        const params = new URLSearchParams(window.location.search);
+        let caregiverId = 1; // Default for test
+        let contentId = 1;   // Default for test
+
+        // 토큰 파싱 로직 (예: token=edu_1_5_xxxx)
+        const token = params.get('token') || params.get('t');
+        if (token) {
+            try {
+                const parts = token.split('_'); // ['edu', 'contentId', 'caregiverId', 'uuid']
+                if (parts.length >= 3) {
+                    contentId = parseInt(parts[1]);
+                    caregiverId = parseInt(parts[2]);
+                }
+            } catch (e) { console.error("Token parsing error", e); }
+        }
+
+        // Mock Data 로드 확인
+        if (typeof mockCaregivers === 'undefined') {
+            alert('데이터 로드 실패. 관리자에게 문의하세요.');
+        }
+
+        // 2. 초기 데이터 세팅
+        const caregiver = mockCaregivers.find(c => c.id === caregiverId);
+        const content = mockEducationContents.find(e => e.id === contentId);
+
+        document.getElementById('caregiverName').textContent = caregiver ? caregiver.name + '님' : '게스트';
+        document.getElementById('videoTitle').textContent = content ? content.title : '교육 영상';
+
+        // 3. YouTube Player API 로드
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'M7lc1UVf-VE', // 예시 영상 (Google Developers) - 실제로는 content.video_id 사용
+                playerVars: {
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // 4. 영상 상태 변경 감지
+        let isVideoCompleted = false;
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                isVideoCompleted = true;
+                showQuizSection();
+            } else if (event.data === YT.PlayerState.PLAYING) {
+                document.getElementById('progressMsg').innerHTML =
+                    `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981; margin-right:6px;"></span>시청 중... 끝까지 봐주세요!`;
+            }
+        }
+
+        // 5. 퀴즈 섹션 표시
+        function showQuizSection() {
+            document.getElementById('progressMsg').innerHTML =
+                `<span style="color:#10B981; font-weight:bold;">✅ 시청 완료! 아래 퀴즈를 풀어주세요.</span>`;
+
+            const quizSection = document.getElementById('quizSection');
+            quizSection.style.display = 'block';
+
+            // 퀴즈 렌더링
+            renderQuiz();
+
+            // 자연스럽게 스크롤
+            setTimeout(() => {
+                quizSection.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+        }
+
+        // 6. 퀴즈 렌더링 및 로직
+        let currentAnswers = {}; // { questionId: selectedIndex }
+
+        function renderQuiz() {
+            // mockQuizzes는 mockData.js에 정의되어야 함
+            if (typeof mockQuizzes === 'undefined') {
+                document.getElementById('questionContainer').innerHTML = '<p>퀴즈 데이터가 없습니다.</p>';
+                return;
+            }
+
+            const quizData = mockQuizzes.find(q => q.education_content_id === contentId);
+            if (!quizData) {
+                document.getElementById('questionContainer').innerHTML = '<p>이 교육에 등록된 퀴즈가 없습니다.</p>';
+                return;
+            }
+
+            const questions = quizData.questions;
+            document.getElementById('totalQuestions').textContent = questions.length;
+
+            const container = document.getElementById('questionContainer');
+            container.innerHTML = questions.map((q, idx) => `
+                <div class="quiz-card" id="q_${q.id}">
+                    <div class="quiz-question">${idx + 1}. ${q.question}</div>
+                    <div class="options">
+                        ${q.options.map((opt, i) => `
+                            <button class="option-btn" onclick="selectOption(${q.id}, ${i})">${opt}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.selectOption = function (questionId, optionIndex) {
+            currentAnswers[questionId] = optionIndex;
+
+            // UI 업데이트
+            const card = document.getElementById(`q_${questionId}`);
+            const buttons = card.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                if (idx === optionIndex) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        };
+
+        window.submitQuiz = function () {
+            const quizData = mockQuizzes.find(q => q.education_content_id === contentId);
+            if (!quizData) return;
+
+            const questions = quizData.questions;
+
+            // 모든 문제 풀었는지 확인
+            if (Object.keys(currentAnswers).length < questions.length) {
+                alert('모든 문제를 풀어주세요!');
+                return;
+            }
+
+            // 채점
+            let correctCount = 0;
+            questions.forEach(q => {
+                if (currentAnswers[q.id] === q.answer) correctCount++;
+            });
+
+            const score = Math.round((correctCount / questions.length) * 100);
+            const isPassed = score >= 80;
+
+            showResult(score, isPassed);
+        };
+
+        function showResult(score, isPassed) {
+            const modal = document.getElementById('resultModal');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const msg = document.getElementById('resultMsg');
+            const scoreDisplay = document.getElementById('resultScore');
+
+            scoreDisplay.textContent = score + '점';
+            scoreDisplay.style.color = isPassed ? 'var(--primary-600)' : 'var(--danger-500)';
+
+            if (isPassed) {
+                icon.textContent = '🎉';
+                title.textContent = '이수 완료!';
+                msg.innerHTML = '축하합니다.<br>모든 교육 과정을 성공적으로 마쳤습니다.';
+                saveCompletionRecord(score);
+            } else {
+                icon.textContent = '😢';
+                title.textContent = '아쉬워요...';
+                msg.innerHTML = '이수 기준 점수(80점)에 도달하지 못했습니다.<br>다시 시도해주세요.';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // 7. 결과 저장 (localStorage 연동 -> 센터장 페이지에 반영)
+        function saveCompletionRecord(score) {
+            // 실제라면 API 호출
+            // 여기서는 localStorage에 저장하여 다른 페이지와 연동
+
+            const newRecord = {
+                id: Date.now(),
+                caregiver_id: caregiverId,
+                education_content_id: contentId,
+                status: 'completed',
+                score: score,
+                completed_at: new Date().toISOString()
+            };
+
+            // 기존 로컬스토리지 기록 가져오기
+            const records = JSON.parse(localStorage.getItem('kema_completion_records') || '[]');
+
+            // 중복 제거 (같은 교육이면 덮어쓰기 or 추가?) -> 여기서는 가장 최근 기록으로 추가
+            records.push(newRecord);
+
+            localStorage.setItem('kema_completion_records', JSON.stringify(records));
+
+            console.log('이수 기록 저장 완료:', newRecord);
+        }
+    </script>
+</body>
+
+</html>

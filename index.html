@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - 케마 KEMA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            box-shadow: var(--shadow-xl);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-logo {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .login-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--neutral-800);
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .login-footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--neutral-500);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card login-card">
+        <div class="login-header">
+            <span class="login-logo">🏥</span>
+            <h1 class="login-title">케마 KEMA</h1>
+            <p style="color: var(--neutral-500); margin-top:4px;">방문요양기관 직무교육 통합 관리</p>
+        </div>
+
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label" for="username">아이디</label>
+                <input type="text" id="username" class="form-input" placeholder="아이디를 입력하세요" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">비밀번호</label>
+                <input type="password" id="password" class="form-input" placeholder="비밀번호를 입력하세요" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full">로그인</button>
+        </form>
+
+        <div class="login-footer">
+            <p>초기 계정: <strong>admin</strong> / <strong>director</strong> (비번: 1234)</p>
+        </div>
+    </div>
+
+    <script src="mockData.js"></script>
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('username').value;
+            const pw = document.getElementById('password').value;
+
+            if (typeof mockUsers === 'undefined') {
+                alert('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+                return;
+            }
+
+            const user = mockUsers.find(u => u.username === id && u.password === pw);
+
+            if (user) {
+                // 직무에 따라 리다이렉션
+                if (user.role === 'admin') {
+                    location.href = 'headquarters.html';
+                } else if (user.role === 'director') {
+                    // 센터장의 경우 로그인 정보(기관ID)를 활용할 수 있도록 저장
+                    localStorage.setItem('kema_current_org', user.organization_id);
+                    location.href = 'director.html';
+                }
+            } else {
+                alert('아이디 또는 비밀번호가 일치하지 않습니다.');
+            }
+        }
+    </script>
+</body>
+
+</html>
